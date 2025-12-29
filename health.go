@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 func RunHealthChecks(cfg *Config) {
-	// Initial check
+	// Initial check on startup
 	performCheck(cfg)
 
 	ticker := time.NewTicker(15 * time.Second)
@@ -20,28 +21,42 @@ func RunHealthChecks(cfg *Config) {
 }
 
 func performCheck(cfg *Config) {
-	for zoneName, zone := range cfg.Zones {
+	for _, zone := range cfg.Zones {
 		for _, pool := range zone.Pools {
 			for _, ip := range pool.IPs {
 				addr := fmt.Sprintf("%s:%d", ip, pool.MonitorPort)
-
-				// Default to TCP if not specified
 				proto := pool.MonitorProto
 				if proto == "" {
 					proto = "tcp"
 				}
 
-				conn, err := net.DialTimeout(proto, addr, 2*time.Second)
+				// Perform health check
+				conn, err := net.DialTimeout(proto, addr, 3*time.Second)
+				isHealthy := (err == nil)
+				if conn != nil {
+					conn.Close()
+				}
 
 				pool.Mu.Lock()
-				isHealthy := (err == nil)
+				// Track status changes to avoid noisy logs
+				wasHealthy, exists := pool.Healthy[ip]
 				pool.Healthy[ip] = isHealthy
 				pool.Mu.Unlock()
 
-				if err != nil {
-					log.Printf("[HEALTH] %s (%s) DOWN: %v", zoneName, ip, err)
-				} else {
-					conn.Close()
+				// Only log when the state changes
+				if !exists || wasHealthy != isHealthy {
+					if isHealthy {
+						logger.Info("server is UP", 
+							zap.String("ip", ip), 
+							zap.String("pool", pool.Name),
+						)
+					} else {
+						logger.Warn("server is DOWN", 
+							zap.String("ip", ip), 
+							zap.String("pool", pool.Name), 
+							zap.Error(err),
+						)
+					}
 				}
 			}
 		}

@@ -1,0 +1,15 @@
+[Unit]
+Description=GSLB DNS Load Balancer
+After=network.target
+
+[Service]
+Type=simple
+User=arkadmin
+WorkingDirectory=/etc/gslb
+ExecStart=/etc/gslb/gtm --config /etc/gslb/config.json
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
+

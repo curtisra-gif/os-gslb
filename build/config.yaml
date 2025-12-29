@@ -1,0 +1,23 @@
+server:
+  listen_addr: ":53"
+  geoip_db_path: "./GeoLite2-City.mmdb"
+  throttling:
+    rps: 10
+    burst: 20
+
+zones:
+  "app.example.com.":
+    ttl: 30
+    pools:
+      - name: "us-east"
+        lat: 39.04
+        lon: -77.48
+        monitor_port: 443
+        monitor_proto: "tcp"
+        ips: ["172.30.3.10", "172.30.3.100"]
+      - name: "eu-central"
+        lat: 50.11
+        lon: 8.68
+        monitor_port: 443
+        monitor_proto: "tcp"
+        ips: ["1.1.1.1"]
