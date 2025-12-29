@@ -1,6 +1,7 @@
 package dns
 
 import (
+	"log"
 	"net"
 
 	"github.com/curtisra-gif/os-gslb/internal/config"
@@ -17,8 +18,10 @@ type Handler struct {
 
 func (h *Handler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 	ip := extractClientIP(w, r) // handles EDNS Client Subnet
+	log.Printf("[DEBUG] Received query from IP: %s", ip)
 
 	if !h.Throttler.Allow(ip) {
+		log.Printf("[DEBUG] Request throttled for IP: %s", ip)
 		m := new(dns.Msg)
 		m.SetRcode(r, dns.RcodeRefused)
 		_ = w.WriteMsg(m)
@@ -29,19 +32,25 @@ func (h *Handler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 	m.SetReply(r)
 
 	for _, q := range r.Question {
+		log.Printf("[DEBUG] Query for domain: %s, type: %d", q.Name, q.Qtype)
 		if q.Qtype == dns.TypeA {
 			region := h.GeoLocator.Lookup(ip)
+			log.Printf("[DEBUG] Mapped IP %s to region: %s", ip, region)
 			backendIP := h.Router.Route(region)
+			log.Printf("[DEBUG] Region %s routed to backend IP: %s", region, backendIP)
 			if backendIP != "" {
 				m.Answer = append(m.Answer, &dns.A{
 					Hdr: dns.RR_Header{Name: q.Name, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: 30},
 					A:   net.ParseIP(backendIP),
 				})
+			} else {
+				log.Printf("[WARN] No backend IP found for region: %s", region)
 			}
 		}
 	}
 
 	_ = w.WriteMsg(m)
+	log.Printf("[DEBUG] Response sent for IP: %s", ip)
 }
 
 // Example ECS extraction
