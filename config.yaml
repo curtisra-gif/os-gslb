@@ -1,0 +1,33 @@
+listen_ip: "0.0.0.0"
+listen_port: 5353
+rate_limit: 10
+geo_db_path: "./GeoLite2-City.mmdb"
+health_check_interval_sec: 10
+
+# The domain this GSLB server is authoritative for
+domain: "example.com."
+
+regions:
+  - name: "NA"
+    dns_name: "na.example.com."
+    backends:
+      - ip: "1.1.1.1"
+        weight: 70
+      - ip: "1.1.1.2"
+        weight: 30
+
+  - name: "EU"
+    dns_name: "eu.example.com."
+    backends:
+      - ip: "2.2.2.2"
+        weight: 50
+      - ip: "2.2.2.3"
+        weight: 50
+
+  - name: "APAC"
+    dns_name: "apac.example.com."
+    backends:
+      - ip: "3.3.3.3"
+        weight: 60
+      - ip: "3.3.3.4"
+        weight: 40
