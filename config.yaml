@@ -31,3 +31,8 @@ regions:
         weight: 60
       - ip: "3.3.3.4"
         weight: 40
+
+  - name: "Default"
+    backends:
+      - ip: "6.6.6.6"
+        weight: 100

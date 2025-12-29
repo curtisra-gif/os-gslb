@@ -37,6 +37,6 @@ func (g *GeoLocator) Lookup(ipStr string) string {
 	case "DE", "FR", "GB":
 		return "EU"
 	default:
-		return "NA"
+		return "Default"
 	}
 }

@@ -37,6 +37,8 @@ func (r *Router) Route(regionName string) string {
 				}
 				randVal -= b.Weight
 			}
+		} else {
+
 		}
 	}
 	return "" // fallback if no healthy backend
