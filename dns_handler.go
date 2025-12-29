@@ -111,7 +111,13 @@ func getHealthyIPs(pool *ServerPool, qname string, ttl uint32) []dns.RR {
 }
 
 func (h *GSLBHandler) findClosestPool(clientIP net.IP, pools []*ServerPool) *ServerPool {
-	record, err := db.City(clientIP)
+	// Safely load the current active DB reader
+	currentDB := dbPtr.Load()
+	if currentDB == nil {
+		return pools[0]
+	}
+
+	record, err := currentDB.City(clientIP)
 	if err != nil {
 		return pools[0] 
 	}
