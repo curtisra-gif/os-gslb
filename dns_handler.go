@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net"
 
 	"github.com/miekg/dns"
@@ -41,14 +42,29 @@ func (h *GSLBHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 
 		bestPool := h.findClosestPool(clientIP, zone.Pools)
 
+		bestPool.Mu.RLock()
+		var answers []dns.RR
 		for _, ip := range bestPool.IPs {
 			if bestPool.Healthy[ip] {
-				msg.Answer = append(msg.Answer, &dns.A{
+				answers = append(answers, &dns.A{
 					Hdr: dns.RR_Header{Name: q.Name, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: zone.TTL},
 					A:   net.ParseIP(ip),
 				})
 			}
 		}
+		bestPool.Mu.RUnlock()
+
+		// Fallback: If no healthy servers, return all IPs in the pool anyway
+		if len(answers) == 0 {
+			log.Printf("[DNS] No healthy IPs for %s, returning all pool IPs as fallback", q.Name)
+			for _, ip := range bestPool.IPs {
+				answers = append(answers, &dns.A{
+					Hdr: dns.RR_Header{Name: q.Name, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: zone.TTL},
+					A:   net.ParseIP(ip),
+				})
+			}
+		}
+		msg.Answer = append(msg.Answer, answers...)
 	}
 	w.WriteMsg(msg)
 }

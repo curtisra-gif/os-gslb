@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"sync"
 
 	"gopkg.in/yaml.v3"
 )
@@ -24,11 +25,14 @@ type ZoneConfig struct {
 }
 
 type ServerPool struct {
-	Name    string   `yaml:"name"`
-	Lat     float64  `yaml:"lat"`
-	Lon     float64  `yaml:"lon"`
-	IPs     []string `yaml:"ips"`
-	Healthy map[string]bool
+	Name         string   `yaml:"name"`
+	Lat          float64  `yaml:"lat"`
+	Lon          float64  `yaml:"lon"`
+	MonitorPort  int      `yaml:"monitor_port"`
+	MonitorProto string   `yaml:"monitor_proto"`
+	IPs          []string `yaml:"ips"`
+	Healthy      map[string]bool
+	Mu           sync.RWMutex // Protects the Healthy map
 }
 
 func LoadConfig(path string) (*Config, error) {

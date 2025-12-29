@@ -12,8 +12,12 @@ zones:
       - name: "us-east"
         lat: 39.04
         lon: -77.48
+        monitor_port: 80
+        monitor_proto: "tcp"
         ips: ["192.168.1.10", "192.168.1.11"]
       - name: "eu-central"
         lat: 50.11
         lon: 8.68
+        monitor_port: 80
+        monitor_proto: "tcp"
         ips: ["1.2.3.4"]
