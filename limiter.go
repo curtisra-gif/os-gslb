@@ -26,11 +26,11 @@ type RRLimiter struct {
 func generateKey(ip net.IP, domain string) string {
 	var network string
 	if ip4 := ip.To4(); ip4 != nil {
-		// Group by /24 for IPv4
-		network = net.IPNet{IP: ip4.Mask(net.CIDRMask(24, 32)), Mask: net.CIDRMask(24, 32)}.String()
+		// Mask to /24 and convert to string
+		network = ip4.Mask(net.CIDRMask(24, 32)).String()
 	} else {
-		// Group by /48 for IPv6
-		network = net.IPNet{IP: ip, Mask: net.CIDRMask(48, 128)}.String()
+		// Mask to /48 and convert to string
+		network = ip.Mask(net.CIDRMask(48, 128)).String()
 	}
 
 	return fmt.Sprintf("%s:%s", network, domain)
